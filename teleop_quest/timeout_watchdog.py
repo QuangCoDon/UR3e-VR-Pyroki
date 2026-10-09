@@ -30,14 +30,6 @@ class TimeoutWatchdog(threading.Thread):
                 if not self._armed:
                     continue
                     
-            # Nếu đang arm, kiểm tra thời gian
-            last_seen = self.server.last_seen()
-            if time.time() - last_seen > self.timeout_s:
-                # Kích hoạt an toàn
-                if self.executor and self.executor._ctrl:
-                    try:
-                        self.executor._ctrl.servoStop()
-                        print("[Watchdog] MAT KET NOI VR! DA PHANH KHAN CAP ROBOT.")
-                    except:
-                        pass
-                self.disarm()
+            # Bỏ qua hoàn toàn watchdog trong phiên bản Gộp 2 luồng điều khiển
+            # (Tránh việc mất kết nối VR làm hỏng luồng điều khiển của PC)
+            continue
