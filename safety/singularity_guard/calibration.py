@@ -19,7 +19,7 @@ def calibrate_thresholds(num_samples=100000):
     metrics_calc = JacobianMetrics()
     device = metrics_calc.device
     
-    # Giới hạn khớp của UR3e (từ curobo_ursim_control.py)
+    # Giới hạn khớp của UR3e
     limits = [
         (-math.pi, math.pi),
         (-math.pi, math.pi),
@@ -71,7 +71,7 @@ def calibrate_thresholds(num_samples=100000):
     print(f"WARN  : {warn_threshold:.5f}")
     
     # Cập nhật YAML
-    config_path = os.path.join(os.path.dirname(__file__), "..", "config", "singularity.yaml")
+    config_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "config", "singularity.yaml")
     if os.path.exists(config_path):
         config = load_config(config_path)
         config["thresholds"]["sigma_min_danger"] = float(f"{danger_threshold:.4f}")

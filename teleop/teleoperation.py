@@ -74,37 +74,6 @@ class PyRokiIKSolver:
             return {"q": None, "latency_ms": (time.perf_counter() - t0) * 1000, "solver": "pyroki"}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# MODULE 2B: CuRobo IK Solver
-# ─────────────────────────────────────────────────────────────────────────────
-# Input:  pose = { "pos": [X,Y,Z], "quat": [Qw,Qx,Qy,Qz] }
-#         q_real = [6 góc khớp hiện tại - Radian]
-# Output: { "q": [6 Radian] hoặc None, "latency_ms": float, "solver": "curobo" }
-#
-class CuRoboIKSolver:
-    def __init__(self, ik_solver):
-        self._ik = ik_solver
-
-    def solve(self, pose, q_real):
-        t0 = time.perf_counter()
-        try:
-            q = self._ik.solve(pose["pos"], pose["quat"], current_q=q_real)
-            return {"q": q, "latency_ms": (time.perf_counter() - t0) * 1000, "solver": "curobo"}
-        except Exception:
-            return {"q": None, "latency_ms": (time.perf_counter() - t0) * 1000, "solver": "curobo"}
-
-    def fk(self, q: list) -> dict:
-        import torch
-        from curobo.types import JointState
-        js = torch.tensor([q], device="cuda", dtype=torch.float32)
-        js_obj = JointState.from_position(js, joint_names=self._ik.solver.kinematics.joint_names)
-        kin_state = self._ik.solver.kinematics.compute_kinematics(js_obj)
-        pose = kin_state.tool_poses
-        return {
-            "pos": pose.position.squeeze().cpu().tolist(),
-            "quat": pose.quaternion.squeeze().cpu().tolist()  # [w, x, y, z]
-        }
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MODULE 3: SafetyGate

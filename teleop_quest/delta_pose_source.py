@@ -141,7 +141,7 @@ class DeltaPoseSource:
             self._ema_quat_xyzw /= np.linalg.norm(self._ema_quat_xyzw)
             self._ema_quat_xyzw /= np.linalg.norm(self._ema_quat_xyzw)
             
-        # Trả về định dạng wxyz cho cuRobo
+        # Trả về định dạng wxyz
         target_quat_wxyz = [self._ema_quat_xyzw[3], self._ema_quat_xyzw[0], self._ema_quat_xyzw[1], self._ema_quat_xyzw[2]]
 
         return {
