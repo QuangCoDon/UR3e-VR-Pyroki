@@ -100,7 +100,8 @@ def main():
     joint_names = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
     try:
         import viser.extras as vex
-        robot_urdf = vex.ViserUrdf(server, urdf_path)
+        from pathlib import Path
+        robot_urdf = vex.ViserUrdf(server, Path(urdf_path))
         if robot_urdf:
             robot_urdf.update_cfg(np.array(START_JOINTS))
     except Exception as e:
