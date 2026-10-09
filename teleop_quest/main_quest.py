@@ -164,8 +164,11 @@ def main():
     guard = SingularityGuard(config)
     
     executor = ServoJExecutor(dt=POLL_SLEEP)
+    # Thêm mặt đất (Ground plane)
+    server.scene.add_grid("ground_grid", width=2.0, height=2.0, width_segments=20, height_segments=20, position=(0, 0, 0))
+
     teleop = TeleoperationController(
-        pose_source=widget_pose_source,
+        pose_source=pose_source, # SỬ DỤNG VR HEADSET LÀM NGUỒN ĐIỀU KHIỂN CHÍNH
         pyroki_solver=pyroki_ik,
         safety_gate=SafetyGate(guard=guard),
         executor=executor
