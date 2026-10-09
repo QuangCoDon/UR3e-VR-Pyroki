@@ -44,7 +44,7 @@ Project_Ur3e/
 ### 2. Chạy giả lập URSim
 Khởi động máy ảo Docker chứa hệ điều hành của tủ điều khiển UR:
 ```bash
-ros2 run ur_client_library start_ursim.sh -m ur3e -f "-p 30001-30004:30001-30004 -p 29999:29999 -p 6080:6080"
+docker run --rm -it -e ROBOT_MODEL=UR3e -p 30001-30004:30001-30004 -p 29999:29999 -p 6080:6080 universalrobots/ursim_e-series
 ```
 
 ### 3. Khởi động Server Điều khiển & VR

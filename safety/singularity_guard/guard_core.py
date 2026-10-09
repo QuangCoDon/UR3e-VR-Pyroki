@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import torch
 from safety.singularity_guard.jacobian_metrics import JacobianMetrics
 
 class SingularityGuard:
@@ -11,7 +10,7 @@ class SingularityGuard:
         self.metrics_calc = JacobianMetrics(robot_config_file=config["robot"]["model_file"])
         
         # UR3e joint velocity limits (rad/s)
-        self.vel_limits = torch.tensor([3.14, 3.14, 3.14, 3.14, 3.14, 3.14], device=self.metrics_calc.device)
+        self.vel_limits = np.array([3.14, 3.14, 3.14, 3.14, 3.14, 3.14], dtype=np.float32)
 
     def check_trajectory(self, q_traj: list, dt: float = 0.05):
         """
@@ -21,28 +20,26 @@ class SingularityGuard:
         if len(q_traj) < 2:
             return True, "Too short"
             
-        q_tensor = torch.tensor(q_traj, device=self.metrics_calc.device, dtype=torch.float32)
+        q_arr = np.array(q_traj, dtype=np.float32)
         
         # 1. Tính metric cho toàn bộ waypoint
-        metrics = self.metrics_calc.get_metrics(q_tensor)
+        metrics = self.metrics_calc.get_metrics(q_arr)
         sigma_min = metrics["sigma_min"]
         
-        min_sigma = torch.min(sigma_min).item()
+        min_sigma = np.min(sigma_min).item()
         if min_sigma < self.danger_threshold:
             return False, f"Singularity Danger: sigma_min={min_sigma:.5f} < {self.danger_threshold}"
             
         # 2. Tính vận tốc qd
-        # qd = (q_{t} - q_{t-1}) / dt
-        qd = (q_tensor[1:] - q_tensor[:-1]) / dt
-        abs_qd = torch.abs(qd)
+        qd = (q_arr[1:] - q_arr[:-1]) / dt
+        abs_qd = np.abs(qd)
         
         # Tính tỷ lệ so với giới hạn
-        ratio = abs_qd / self.vel_limits.unsqueeze(0)
-        max_ratio = torch.max(ratio).item()
+        ratio = abs_qd / self.vel_limits[np.newaxis, :]
+        max_ratio = np.max(ratio).item()
         
         if max_ratio > self.max_qd_ratio:
-            # Tìm khớp bị vượt limit
-            max_idx = torch.argmax(ratio).item()
+            max_idx = np.argmax(ratio).item()
             joint_idx = max_idx % 6
             return False, f"Velocity Spike: Joint {joint_idx} ratio={max_ratio:.2f} > {self.max_qd_ratio}"
             
@@ -60,24 +57,20 @@ class SingularityGuard:
         q_t = np.array(q_target)
         delta_q = q_t - q_c
         
-        # Vận tốc yêu cầu
         qd = np.abs(delta_q) / dt
         max_qd_req = np.max(qd)
         
-        # Giới hạn vận tốc an toàn (ví dụ: 1.0 rad/s)
-        safe_qd_limit = self.max_qd_ratio * 3.14 # max_qd_ratio * pi rad/s
+        safe_qd_limit = self.max_qd_ratio * 3.14
         
         if max_qd_req > safe_qd_limit:
-            # Thu nhỏ delta_q theo tỷ lệ
             scale = safe_qd_limit / max_qd_req
             delta_q = delta_q * scale
             q_safe = q_c + delta_q
-            return q_safe.tolist(), True # bị kẹp (clamped)
+            return q_safe.tolist(), True
             
-        return q_target, False # bình thường
+        return q_target, False
 
-
-    def filter_ik_solutions(self, q_candidates: torch.Tensor):
+    def filter_ik_solutions(self, q_candidates: np.ndarray):
         """
         Nhận vào một batch các giải pháp IK, trả về các giải pháp an toàn
         """

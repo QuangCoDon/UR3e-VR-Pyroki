@@ -7,8 +7,10 @@ import pyroki as pk
 import numpy as np
 
 def setup_pyroki_ik(urdf_path, target_link_name="tool0"):
+    import yourdfpy
     # Load robot from URDF
-    robot = pk.Robot(urdf_path)
+    urdf = yourdfpy.URDF.load(urdf_path)
+    robot = pk.Robot.from_urdf(urdf)
     target_link_idx = robot.links.names.index(target_link_name)
 
     @jax.jit

@@ -1,6 +1,6 @@
 import os
 import time
-import pandas as pd
+import csv
 
 class DataLogger:
     def __init__(self, config):
@@ -19,21 +19,30 @@ class DataLogger:
         # Bật/tắt cờ ghi
         self.is_recording = False
 
-    def log_step(self, q, qd, tcp_pose, image_path=None, event_tag="teleop"):
+    def log_step(self, *args, **kwargs):
+        """
+        Nhận bất kỳ arguments nào để không bị crash khi các planner cũ gọi với format cũ.
+        (Chỉ ghi nếu is_recording = True)
+        """
         if not self.is_recording:
             return
             
+        # Extract basic info if possible
+        q = kwargs.get("q", args[0] if len(args) > 0 else None)
+        qd = kwargs.get("qd", args[1] if len(args) > 1 else None)
+        tcp_pose = kwargs.get("tcp_pose", args[2] if len(args) > 2 else None)
+        event_tag = kwargs.get("event_tag", "teleop")
+            
         row = {
             "timestamp_ms": int(time.time() * 1000),
-            "event_tag": event_tag,
-            "image_path": image_path if image_path else "None",
+            "event_tag": str(event_tag),
         }
         
         for i in range(6):
-            row[f"q_{i}"] = float(q[i]) if q is not None else 0.0
-            row[f"qd_{i}"] = float(qd[i]) if qd is not None else 0.0
+            row[f"q_{i}"] = float(q[i]) if (q is not None and len(q) == 6) else 0.0
+            row[f"qd_{i}"] = float(qd[i]) if (qd is not None and len(qd) == 6) else 0.0
                 
-        if tcp_pose is not None:
+        if tcp_pose is not None and len(tcp_pose) >= 3:
             # Lưu [x, y, z, q_w, q_x, q_y, q_z]
             for i, axis in enumerate(['x', 'y', 'z', 'qw', 'qx', 'qy', 'qz']):
                 if i < len(tcp_pose):
@@ -49,13 +58,13 @@ class DataLogger:
         if not self.data_buffer:
             return
             
-        df = pd.DataFrame(self.data_buffer)
+        file_exists = os.path.exists(self.current_run_file)
         
-        # Append to CSV if exists
-        if os.path.exists(self.current_run_file):
-            df.to_csv(self.current_run_file, mode='a', header=False, index=False)
-        else:
-            df.to_csv(self.current_run_file, mode='w', header=True, index=False)
+        with open(self.current_run_file, mode='a', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=self.data_buffer[0].keys())
+            if not file_exists:
+                writer.writeheader()
+            writer.writerows(self.data_buffer)
             
+        print(f"[AI Logger] Đã ghi {len(self.data_buffer)} frames vào {self.current_run_file}")
         self.data_buffer = []
-        print(f"[AI Logger] Đã ghi {len(df)} frames vào {self.current_run_file}")

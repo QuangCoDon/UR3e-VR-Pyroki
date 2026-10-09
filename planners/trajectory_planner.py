@@ -1,5 +1,4 @@
 import time
-import torch
 import numpy as onp
 import planners.pyroki_mp as pyroki_mp
 
@@ -70,8 +69,8 @@ class TrajectoryPlanner:
         # Đánh giá độ an toàn
         min_sigma_traj = 1.0
         for tq in clamped_traj:
-            m = self.guard.metrics_calc.get_metrics(torch.tensor([tq], device=self.guard.metrics_calc.device))
-            min_sigma_traj = min(min_sigma_traj, m["sigma_min"].item())
+            m = self.guard.metrics_calc.get_metrics(onp.array([tq], dtype=onp.float32))
+            min_sigma_traj = min(min_sigma_traj, m["sigma_min"][0].item())
 
         warning = ""
         if min_sigma_traj < self.guard.danger_threshold:
@@ -83,10 +82,10 @@ class TrajectoryPlanner:
 
         # Ghi log
         for q in clamped_traj:
-            m = self.guard.metrics_calc.get_metrics(torch.tensor([q], device=self.guard.metrics_calc.device))
+            m = self.guard.metrics_calc.get_metrics(onp.array([q], dtype=onp.float32))
             self.logger.log_step(q, None, None, None,
-                            m["sigma_min"].item(), m["manipulability"].item(),
-                            m["condition_number"].item(), "none", None, "OK", "mp_execute")
+                            m["sigma_min"][0].item(), m["manipulability"][0].item(),
+                            m["condition_number"][0].item(), "none", None, "OK", "mp_execute")
         self.logger.flush()
 
         return True, clamped_traj, warning

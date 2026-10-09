@@ -99,9 +99,10 @@ def main():
     robot_urdf = None
     joint_names = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
     try:
-        robot_urdf = server.scene.add_urdf("robot", urdf_path)
+        import viser.extras as vex
+        robot_urdf = vex.ViserUrdf(server, urdf_path)
         if robot_urdf:
-            robot_urdf.update_cfg(dict(zip(joint_names, START_JOINTS)))
+            robot_urdf.update_cfg(np.array(START_JOINTS))
     except Exception as e:
         print(f"[Cảnh báo] Không thể tải URDF lên Viser (có thể do phiên bản viser): {e}")
 
@@ -165,7 +166,6 @@ def main():
     teleop = TeleoperationController(
         pose_source=widget_pose_source,
         pyroki_solver=pyroki_ik,
-        curobo_solver=None,
         safety_gate=SafetyGate(guard=guard),
         executor=executor
     )
@@ -222,7 +222,7 @@ def main():
         for q in traj:
             executor._ctrl.servoJ(q, 0.0, 0.0, POLL_SLEEP, 0.1, 300)
             if robot_urdf:
-                robot_urdf.update_cfg(dict(zip(joint_names, q)))
+                robot_urdf.update_cfg(np.array(q))
             time.sleep(POLL_SLEEP)
         executor.disconnect()
         
@@ -255,7 +255,7 @@ def main():
     for q in traj:
         executor._ctrl.servoJ(q, 0.0, 0.0, POLL_SLEEP, 0.1, 300)
         if robot_urdf:
-            robot_urdf.update_cfg(dict(zip(joint_names, q)))
+            robot_urdf.update_cfg(np.array(q))
         time.sleep(POLL_SLEEP)
     executor.disconnect()
     
@@ -273,7 +273,7 @@ def main():
     
     print("\n[LIÊN KẾT NHANH DÀNH CHO MÁY TÍNH]")
     print(f"-> Viser Dashboard (Giao diện điều khiển): http://localhost:8080")
-    print(f"-> URSim Web (Màn hình Teach Pendant): http://192.168.56.101:6080/vnc.html")
+    print(f"-> URSim Web (Màn hình Teach Pendant): http://localhost:6080/vnc.html")
     
     print("\n[LIÊN KẾT DÀNH CHO KÍNH VR QUEST 3S]")
     print(f"1. Thông chốt SSL (Duyệt mạng): https://{local_ip}:{quest_server.ws_port}")
@@ -317,7 +317,7 @@ def main():
             try:
                 q_real = ctrl.joints()
                 if robot_urdf:
-                    robot_urdf.update_cfg(dict(zip(joint_names, q_real)))
+                    robot_urdf.update_cfg(np.array(q_real))
                 
                 teleop.step(q_real)
                 current_status = teleop.get_status()

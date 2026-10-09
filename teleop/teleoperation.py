@@ -1,7 +1,6 @@
 import time
 import threading
 import numpy as np
-import torch
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MODULE 1: PoseSource
@@ -95,9 +94,9 @@ class SafetyGate:
             return {"pass": False, "reason": "wrist_clamp", "sigma_min": 0.0}
         # Lớp 1: Kiểm tra kỳ dị
         m = self._guard.metrics_calc.get_metrics(
-            torch.tensor([q], device=self._guard.metrics_calc.device)
+            np.array([q], dtype=np.float32)
         )
-        sigma = m["sigma_min"].item()
+        sigma = m["sigma_min"][0].item()
         if sigma < self._guard.danger_threshold:
             return {"pass": False, "reason": f"singularity(σ={sigma:.4f})", "sigma_min": sigma}
         return {"pass": True, "reason": "ok", "sigma_min": sigma}
@@ -179,15 +178,13 @@ class ServoJExecutor:
 # Giao diện với main loop:
 #   - teleop.enabled = True/False  (toggle từ Web button)
 #   - teleop.step(q_real)          (gọi mỗi vòng lặp 20Hz)
-#   - teleop.get_status()          → string hiển thị lên UI
-#   - teleop.get_latency()         → dict latency PyRoki + CuRobo
+#   - teleop.get_latency()         → dict latency PyRoki
 #
 class TeleoperationController:
-    def __init__(self, pose_source, pyroki_solver, curobo_solver,
+    def __init__(self, pose_source, pyroki_solver,
                  safety_gate, executor, dt=0.05):
         self._pose   = pose_source
         self._pyroki = pyroki_solver
-        self._curobo = curobo_solver
         self._gate   = safety_gate
         self._exec   = executor
         self._dt     = dt
@@ -195,7 +192,7 @@ class TeleoperationController:
         self._enabled = False
         self._last_valid_q = None
         self._status  = "⏸ Teleop tắt"
-        self._latency = {"pyroki_ms": 0.0, "curobo_ms": 0.0}
+        self._latency = {"pyroki_ms": 0.0}
         self._lock = threading.Lock()
 
     @property
@@ -256,9 +253,8 @@ class TeleoperationController:
 
         with self._lock:
             self._latency["pyroki_ms"] = result_pk["latency_ms"]
-            self._latency["curobo_ms"] = 0.0
 
-        # ── Chọn q_target: Chỉ dùng PyRoki ─────────────
+        # ── Chọn q_target ─────────────
         if result_pk["q"] is not None:
             q_target = result_pk["q"]
             

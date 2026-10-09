@@ -55,11 +55,11 @@ def setup_ursim() -> bool:
 
 class URSimController:
     """
-    Controller để kết nối với URSim qua RTDE mà không phụ thuộc CuRobo.
+    Controller để kết nối với URSim qua RTDE.
     """
     def __init__(self):
         print("\n" + "=" * 56)
-        print("  URSim Controller (Non-CuRobo)")
+        print("  URSim Controller (PyRoki)")
         print("=" * 56)
 
         if not setup_ursim():
