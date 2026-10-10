@@ -96,22 +96,36 @@
         // Debug mode: Cho phép xem trước Cockpit trên máy tính PC
         document.getElementById('btn-preview-ui').addEventListener('click', () => {
             vrOverlay.style.display = 'flex';
+            
+            // Kéo giãn full màn hình trên PC để giao diện không bị co cụm
+            vrOverlay.style.width = '100vw';
+            vrOverlay.style.height = '100vh';
+            vrOverlay.style.position = 'fixed';
+            
             document.getElementById('launcher-screen').style.display = 'none';
-            document.body.style.backgroundColor = '#ccc'; // Giả lập nền AR
+            document.body.style.backgroundColor = '#0f172a'; // Nền tối ngầu
         });
 
         btnEnterVR.addEventListener('click', () => {
             if (!xrSession) {
-                // Yêu cầu chế độ AR với dom-overlay
+                // HIỆN GIAO DIỆN TRƯỚC KHI GỌI WEBXR (Cực kỳ quan trọng để trình duyệt Quest nhận diện được kích thước DOM)
+                vrOverlay.style.display = 'flex';
+                document.getElementById('launcher-screen').style.display = 'none';
+
+                // Yêu cầu chế độ AR với dom-overlay (Quest hỗ trợ DOM Overlay trong AR)
                 navigator.xr.requestSession('immersive-ar', {
-                    optionalFeatures: ['local-floor', 'bounded-floor', 'dom-overlay'],
+                    optionalFeatures: ['dom-overlay', 'local-floor', 'bounded-floor'],
                     domOverlay: { root: vrOverlay }
                 }).then(onSessionStarted).catch((err) => {
-                    console.log("AR failed, fallback to VR", err);
+                    console.log("AR failed, trying VR", err);
                     navigator.xr.requestSession('immersive-vr', {
-                        optionalFeatures: ['local-floor', 'bounded-floor', 'dom-overlay'],
+                        optionalFeatures: ['dom-overlay', 'local-floor', 'bounded-floor'],
                         domOverlay: { root: vrOverlay }
-                    }).then(onSessionStarted);
+                    }).then(onSessionStarted).catch((err2) => {
+                        alert("Không thể vào VR/AR: " + err2.message);
+                        vrOverlay.style.display = 'none';
+                        document.getElementById('launcher-screen').style.display = 'flex';
+                    });
                 });
             }
         });
@@ -119,8 +133,6 @@
         function onSessionStarted(session) {
             xrSession = session;
             btnEnterVR.style.display = 'none';
-            document.getElementById('launcher-screen').style.display = 'none';
-            vrOverlay.style.display = 'flex'; // Hiện Overlay bằng flex để căn giữa
             statusDiv.innerText = "In VR Session";
 
             session.addEventListener('end', onSessionEnded);

@@ -21,7 +21,7 @@ def setup_pyroki_ik(urdf_path, target_link_name="tool0"):
         
         target_pose = jaxlie.SE3(jnp.concatenate([target_quat, target_pos]))
         
-        joint_var = robot.joint_var_cls()
+        joint_var = robot.joint_var_cls(0)
         factors = []
         
         @jaxls.Cost.factory(name="SE3PoseMatchJointCost")

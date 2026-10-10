@@ -46,7 +46,7 @@ class GizmoPoseSource:
 # Output: { "q": [6 Radian] hoặc None, "latency_ms": float, "solver": "pyroki" }
 #
 class PyRokiIKSolver:
-    def __init__(self, pk_robot, solve_fn, check_error_fn, target_link_index, err_thresh=0.005):
+    def __init__(self, pk_robot, solve_fn, check_error_fn, target_link_index, err_thresh=0.05):
         self._robot = pk_robot
         self._solve = solve_fn
         self._check = check_error_fn
@@ -66,10 +66,10 @@ class PyRokiIKSolver:
             if np.isnan(np.array(q_sol)).any():
                 return {"q": None, "latency_ms": latency_ms, "solver": "pyroki"}
             err = float(self._check(q_sol, jnp.array(pose["pos"])))
-            if err > self._err_thresh:
-                return {"q": None, "latency_ms": latency_ms, "solver": "pyroki"}
-            return {"q": np.array(q_sol).tolist(), "latency_ms": latency_ms, "solver": "pyroki"}
+            return {"q": np.array(q_sol).tolist(), "latency_ms": latency_ms, "solver": "pyroki", "err": err}
         except Exception:
+            import traceback
+            traceback.print_exc()
             return {"q": None, "latency_ms": (time.perf_counter() - t0) * 1000, "solver": "pyroki"}
 
 

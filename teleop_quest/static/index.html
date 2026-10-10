@@ -49,146 +49,121 @@
 
     <!-- DOM OVERLAY HUD -->
     <div id="vr-overlay">
-        <div id="cockpit-panel">
-            <!-- Header -->
-            <div class="cockpit-header">
-                <div class="header-left">
-                    <span class="title">UR3e VR Teleop</span>
+        <div class="hud-container">
+            
+            <!-- PANEL 1: CAMERA STREAM (LEFT) -->
+            <div class="hud-panel glass-panel panel-left">
+                <div class="panel-header">
+                    <span class="icon">📷</span>
+                    <span class="title">ROBOT VISION</span>
+                    <span class="badge red blinking">LIVE</span>
                 </div>
-                <div class="header-center">
-                    <span>PROGRAM &lt;vr_teleop&gt;</span>
-                </div>
-                <div class="header-right">
-                    <button id="btn-exit-vr" class="btn-top-menu">≡ Thoát VR</button>
+                <div class="panel-content">
+                    <div id="cam-stream" class="stream-placeholder">
+                        <div class="spinner"></div>
+                        <p>Waiting for Camera Stream...</p>
+                    </div>
                 </div>
             </div>
-            
-            <!-- Body -->
-            <div class="cockpit-body">
-                <!-- Sidebar -->
-                <div class="sidebar">
-                    <!-- Card 1: System Status -->
-                    <div class="status-card">
-                        <div class="card-title">HỆ THỐNG</div>
-                        <div class="card-row">
-                            <span>Mạng:</span>
-                            <span id="val-net-ping" class="badge green">Tốt (15ms)</span>
+
+            <!-- PANEL 2: VISER 3D (CENTER) -->
+            <div class="hud-panel glass-panel panel-center">
+                <div class="panel-header">
+                    <span class="icon">🤖</span>
+                    <span class="title">DIGITAL TWIN (UR3e)</span>
+                    <span class="badge blue">SYNCED</span>
+                </div>
+                <div class="panel-content viser-container">
+                    <!-- Nhúng Viser Web UI -->
+                    <iframe id="viser-iframe" src="" frameborder="0"></iframe>
+                </div>
+            </div>
+
+            <!-- PANEL 3: TELEMETRY & CONTROLS (RIGHT) -->
+            <div class="hud-panel glass-panel panel-right">
+                <div class="panel-header">
+                    <span class="icon">⚡</span>
+                    <span class="title">SYSTEM TELEMETRY</span>
+                </div>
+                <div class="panel-content scrollable">
+                    <!-- System Status -->
+                    <div class="data-group">
+                        <div class="data-group-title">NETWORK & STATUS</div>
+                        <div class="data-row">
+                            <span class="label">Ping</span>
+                            <span id="val-net-ping" class="value text-green">15ms</span>
                         </div>
-                        <div class="card-row">
-                            <span>Singularity:</span>
-                            <span id="val-singularity" class="badge blue">Theo dõi</span>
+                        <div class="data-row">
+                            <span class="label">Singularity</span>
+                            <span id="val-singularity" class="value text-blue">Monitoring</span>
                         </div>
                     </div>
 
-                    <!-- Card 2: Input Controller -->
-                    <div class="status-card">
-                        <div class="card-title">TAY CẦM VR</div>
-                        <div class="card-row">
-                            <span>Nguồn:</span>
-                            <span id="val-source" class="val-text">Đang chờ...</span>
+                    <!-- VR Controller -->
+                    <div class="data-group">
+                        <div class="data-group-title">VR CONTROLLER</div>
+                        <div class="data-row">
+                            <span class="label">Active Hand</span>
+                            <span id="val-source" class="value">Waiting...</span>
                         </div>
-                        <div class="card-row">
-                            <span>Clutch (Cò):</span>
-                            <span id="val-trigger" class="badge gray">Nhả</span>
+                        <div class="data-row">
+                            <span class="label">Clutch (Trigger)</span>
+                            <span id="val-trigger" class="tag tag-gray">RELEASED</span>
                         </div>
-                        <div class="card-row">
-                            <span>Gripper (Grip):</span>
-                            <span id="val-grip" class="badge gray">Nhả</span>
+                        <div class="data-row">
+                            <span class="label">Gripper (Grip)</span>
+                            <span id="val-grip" class="tag tag-gray">RELEASED</span>
                         </div>
                     </div>
 
-                    <!-- Card 3: Teleop Mode -->
-                    <div class="status-card">
-                        <div class="card-title">CHẾ ĐỘ VẬN HÀNH</div>
-                        <div class="card-row">
-                            <span>Khớp nối:</span>
-                            <span class="val-text">IK Solver</span>
+                    <!-- Kinematics (TCP) -->
+                    <div class="data-group">
+                        <div class="data-group-title">TCP KINEMATICS</div>
+                        <div class="grid-2col">
+                            <div class="data-box">
+                                <div class="box-label">X (m)</div>
+                                <div id="val-x" class="box-value">0.000</div>
+                            </div>
+                            <div class="data-box">
+                                <div class="box-label">Y (m)</div>
+                                <div id="val-y" class="box-value">0.000</div>
+                            </div>
+                            <div class="data-box">
+                                <div class="box-label">Z (m)</div>
+                                <div id="val-z" class="box-value">0.000</div>
+                            </div>
                         </div>
-                        <div class="card-row">
-                            <span>Hệ Tọa độ:</span>
-                            <span class="val-text">Base Space</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Main Form (Center) -->
-                <div class="main-form">
-                    <div class="section-title">Tool Center Point</div>
-                    
-                    <div class="form-group">
-                        <label>Position</label>
-                        <div class="input-row">
-                            <span class="axis-label">X</span>
-                            <div class="fake-input"><span id="val-x">0.000</span> <span class="unit">m</span></div>
-                        </div>
-                        <div class="input-row">
-                            <span class="axis-label">Y</span>
-                            <div class="fake-input"><span id="val-y">0.000</span> <span class="unit">m</span></div>
-                        </div>
-                        <div class="input-row">
-                            <span class="axis-label">Z</span>
-                            <div class="fake-input"><span id="val-z">0.000</span> <span class="unit">m</span></div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Orientation (Quaternion)</label>
-                        <div class="input-row">
-                            <span class="axis-label">Qx</span>
-                            <div class="fake-input"><span id="val-qx">0.000</span></div>
-                        </div>
-                        <div class="input-row">
-                            <span class="axis-label">Qy</span>
-                            <div class="fake-input"><span id="val-qy">0.000</span></div>
-                        </div>
-                        <div class="input-row">
-                            <span class="axis-label">Qz</span>
-                            <div class="fake-input"><span id="val-qz">0.000</span></div>
-                        </div>
-                        <div class="input-row">
-                            <span class="axis-label">Qw</span>
-                            <div class="fake-input"><span id="val-qw">1.000</span></div>
+                        <div class="grid-4col mt-2">
+                            <div class="data-box">
+                                <div class="box-label">Qx</div>
+                                <div id="val-qx" class="box-value">0.00</div>
+                            </div>
+                            <div class="data-box">
+                                <div class="box-label">Qy</div>
+                                <div id="val-qy" class="box-value">0.00</div>
+                            </div>
+                            <div class="data-box">
+                                <div class="box-label">Qz</div>
+                                <div id="val-qz" class="box-value">0.00</div>
+                            </div>
+                            <div class="data-box">
+                                <div class="box-label">Qw</div>
+                                <div id="val-qw" class="box-value">1.00</div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Visualization (Right) -->
-                <div class="visualization">
-                    <div class="section-title">Camera Stream</div>
-                    <div id="cam-stream">
-                        [ Đang chờ luồng hình ảnh... ]
-                    </div>
-                    
-                    <div class="section-title" style="margin-top: 15px;">Viser 3D (Robot Status)</div>
-                    <div id="viser-view">
-                        <!-- Nhúng Viser Web UI -->
-                        <iframe id="viser-iframe" src="" width="100%" height="100%" frameborder="0"></iframe>
-                    </div>
+
+                <!-- Footer Actions -->
+                <div class="panel-footer">
+                    <button id="btn-exit-vr" class="btn-action btn-outline">Thoát VR</button>
+                    <button id="btn-estop" class="btn-action btn-danger">E-STOP</button>
                 </div>
             </div>
-            
-            <!-- Footer -->
-            <div class="cockpit-footer">
-                <div class="footer-left">
-                    <div class="status-indicator running"></div>
-                    <span class="status-text">Running</span>
-                </div>
-                <div class="footer-center">
-                    <div class="speed-slider-container">
-                        <div class="speed-slider-track">
-                            <div class="speed-slider-fill"></div>
-                            <div class="speed-slider-thumb"></div>
-                        </div>
-                        <span class="speed-text">Speed 100%</span>
-                    </div>
-                </div>
-                <div class="footer-right">
-                    <button id="btn-estop">⏹ E-STOP</button>
-                </div>
-            </div>
+
         </div>
     </div>
 
-    <script src="main.js"></script>
+    <script src="main.js?v=2"></script>
 </body>
 </html>

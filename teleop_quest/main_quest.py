@@ -136,34 +136,10 @@ def main():
     pose_source = DeltaPoseSource(quest_server, ctrl, scale=0.7, anchor_reference_func=get_robot_fk_as_ur, alpha=0.08)
     
     class WidgetPoseSource:
-        def __init__(self, alpha=0.15):
-            self.alpha = alpha
-            self._ema_pos = None
-            self._ema_quat_xyzw = None
-            self._last_ts = None
-            
         def get_pose(self):
-            current_ts = target_widget.update_timestamp
-            if self._last_ts is not None and current_ts == self._last_ts:
-                return None
-            self._last_ts = current_ts
-
             target_pos = target_widget.position
             target_quat_wxyz = target_widget.wxyz
-            target_quat_xyzw = np.array([target_quat_wxyz[1], target_quat_wxyz[2], target_quat_wxyz[3], target_quat_wxyz[0]])
-            
-            if self._ema_pos is None:
-                self._ema_pos = target_pos
-                self._ema_quat_xyzw = target_quat_xyzw
-            else:
-                self._ema_pos = self.alpha * target_pos + (1.0 - self.alpha) * self._ema_pos
-                if np.dot(self._ema_quat_xyzw, target_quat_xyzw) < 0:
-                    target_quat_xyzw = -target_quat_xyzw
-                self._ema_quat_xyzw = self.alpha * target_quat_xyzw + (1.0 - self.alpha) * self._ema_quat_xyzw
-                self._ema_quat_xyzw /= np.linalg.norm(self._ema_quat_xyzw)
-                
-            ema_quat_wxyz = [self._ema_quat_xyzw[3], self._ema_quat_xyzw[0], self._ema_quat_xyzw[1], self._ema_quat_xyzw[2]]
-            return {"pos": self._ema_pos.tolist(), "quat": ema_quat_wxyz}
+            return {"pos": target_pos.tolist(), "quat": target_quat_wxyz.tolist()}
             
     widget_pose_source = WidgetPoseSource()
     
@@ -258,8 +234,6 @@ def main():
         fk_res = fk_func(q_home)
         target_widget.position = fk_res["pos"]
         target_widget.wxyz = fk_res["quat"]
-        widget_pose_source._ema_pos = None
-        widget_pose_source._ema_quat_xyzw = None
             
     btn_home.on_click(_on_btn_home_click)
 
@@ -288,8 +262,6 @@ def main():
     fk_res = fk_func(q_home)
     target_widget.position = fk_res["pos"]
     target_widget.wxyz = fk_res["quat"]
-    widget_pose_source._ema_pos = None
-    widget_pose_source._ema_quat_xyzw = None
     print("[Hệ thống] Đã khởi động an toàn tại Home.")
 
     # Vòng lặp chính (20Hz)
@@ -300,6 +272,7 @@ def main():
     print("\n[LIÊN KẾT NHANH DÀNH CHO MÁY TÍNH]")
     print(f"-> Viser Dashboard (Giao diện điều khiển): http://localhost:8080")
     print(f"-> URSim Web (Màn hình Teach Pendant): http://localhost:6080/vnc.html")
+    print(f"-> Xem trước 3 màn hình VR trên PC: http://{local_ip}:8000 (Chạy HTTP để không bị lỗi Mixed Content)")
     
     print("\n[LIÊN KẾT DÀNH CHO KÍNH VR QUEST 3S]")
     print(f"1. Thông chốt SSL (Duyệt mạng): https://{local_ip}:{quest_server.ws_port}")

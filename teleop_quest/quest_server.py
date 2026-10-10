@@ -28,6 +28,10 @@ class QuestServer:
         http_thread = threading.Thread(target=self._run_http, daemon=True)
         http_thread.start()
 
+        # Khởi động HTTP (Insecure) server cho PC
+        http_insecure_thread = threading.Thread(target=self._run_http_insecure, daemon=True)
+        http_insecure_thread.start()
+
         # Khởi động WSS server (chạy daemon thread)
         ws_thread = threading.Thread(target=self._run_ws, daemon=True)
         ws_thread.start()
@@ -73,19 +77,48 @@ class QuestServer:
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, directory=static_dir, **kwargs)
 
+            def end_headers(self):
+                self.send_header('Cache-Control', 'no-store, must-revalidate')
+                self.send_header('Expires', '0')
+                super().end_headers()
+
             def log_message(self, format, *args):
                 pass  # Tắt log mặc định để tránh spam terminal
 
         try:
             httpd = http.server.HTTPServer((self.host, self.http_port), RequestHandler)
             httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
-            print(f"[Quest] HTTPS Server running at https://{self.host}:{self.http_port}")
+            print(f"[Quest] HTTPS Server running at https://{self.host}:{self.http_port} (Dành cho Kính VR)")
             httpd.serve_forever()
         except OSError as e:
             if e.errno == 98:
                 print(f"[Quest] Lỗi: Cổng {self.http_port} đã bị chiếm dụng. Vui lòng tắt các tiến trình cũ.")
             else:
                 print(f"[Quest] HTTPS Error: {e}")
+
+    def _run_http_insecure(self):
+        # HTTP Server không bảo mật dành riêng cho PC (để vượt rào Mixed Content)
+        static_dir = os.path.join(os.path.dirname(__file__), "static")
+        insecure_port = 8000
+
+        class RequestHandler(http.server.SimpleHTTPRequestHandler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, directory=static_dir, **kwargs)
+                
+            def end_headers(self):
+                self.send_header('Cache-Control', 'no-store, must-revalidate')
+                self.send_header('Expires', '0')
+                super().end_headers()
+
+            def log_message(self, format, *args):
+                pass 
+
+        try:
+            httpd = http.server.HTTPServer((self.host, insecure_port), RequestHandler)
+            print(f"[Quest] HTTP Server running at http://{self.host}:{insecure_port} (Dành cho PC)")
+            httpd.serve_forever()
+        except OSError as e:
+            pass
 
     def _run_ws(self):
         self._loop = asyncio.new_event_loop()
